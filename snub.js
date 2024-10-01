@@ -1,73 +1,90 @@
-(function () {
-    var formSelector = 'input[type="email"]';
-    var submitButtonSelector = 'button[type="submit"]';
+(function() {
+  window.validateForm = window.validateForm || [];
 
-    // Use the configuration from the embedded script
-    var api_url = window.emailValidation.api_url;
-    var appToken = window.emailValidation.app_token;
+  // Listen for the form initialization event
+  window.validateForm.push = function(args) {
+    var opts = args[1];
+    var appToken = opts.app_token;
+    var hubspotRegion = opts.region;
+    var hubspotPortalId = opts.portalId;
+    var hubspotFormId = opts.formId;
 
-    function disableSubmitButton() {
-        var submitButton = document.querySelector(submitButtonSelector);
-        if (submitButton) {
-            submitButton.disabled = true;
-        }
-    }
+    // Wait for the document to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+      hbspt.forms.create({
+        region: hubspotRegion,
+        portalId: hubspotPortalId,
+        formId: hubspotFormId,
+        onFormReady: function($form) {
+          let emailValid = false;
+          let messageValid = false;
 
-    function enableSubmitButton() {
-        var submitButton = document.querySelector(submitButtonSelector);
-        if (submitButton) {
-            submitButton.disabled = false;
-        }
-    }
+          // Email validation function
+          function validateEmail(email) {
+            fetch("https://gleemeo.com/api/1.1/wf/record_email", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${appToken}`
+              },
+              body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+              emailValid = data.status !== "blocked";
+              updateFormState($form);
+            })
+            .catch(error => console.error("Email validation error:", error));
+          }
 
-    function showValidationResult(isValid) {
-        var emailField = document.querySelector(formSelector);
-        if (isValid) {
-            emailField.classList.add("valid-email");
-            emailField.classList.remove("invalid-email");
-        } else {
-            emailField.classList.add("invalid-email");
-            emailField.classList.remove("valid-email");
-        }
-    }
+          // Message validation function
+          function validateMessage(message, email) {
+            fetch("https://gleemeo.com/api/1.1/wf/validate_message", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${appToken}`
+              },
+              body: JSON.stringify({ message: message, email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+              messageValid = data.status !== "spam";
+              updateFormState($form);
+            })
+            .catch(error => console.error("Message validation error:", error));
+          }
 
-    function validateEmail(email) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", api_url, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                var response = JSON.parse(xhr.responseText);
-                if (response && response.valid) {
-                    showValidationResult(true);
-                    enableSubmitButton();
-                } else {
-                    showValidationResult(false);
-                    disableSubmitButton();
-                }
-            }
-        };
-
-        xhr.send(JSON.stringify({
-            email: email,
-            app_token: appToken
-        }));
-    }
-
-    document.addEventListener("input", function (event) {
-        var emailField = document.querySelector(formSelector);
-        if (emailField && emailField.value) {
-            var email = emailField.value;
-            var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (emailPattern.test(email)) {
-                validateEmail(email);
+          // Disable form submission if validation fails
+          function updateFormState($form) {
+            const submitButton = $form.find("button, input[type='submit']");
+            if (emailValid && messageValid) {
+              submitButton.removeAttr("disabled").css({ 'opacity': '1', 'pointer-events': 'auto' });
             } else {
-                showValidationResult(false);
-                disableSubmitButton();
+              submitButton.attr("disabled", "disabled").css({ 'opacity': '0.5', 'pointer-events': 'none' });
             }
-        }
-    });
+          }
 
-    disableSubmitButton();
+          // Event listeners for form inputs
+          $form.find("input[type='email']").on("blur", function() {
+            const email = $(this).val();
+            if (email) validateEmail(email);
+          });
+
+          $form.find("textarea[name='message']").on("blur", function() {
+            const message = $(this).val();
+            const email = $form.find("input[type='email']").val();
+            if (message) validateMessage(message, email);
+          });
+
+          // Prevent form submission if validation fails
+          $form.on("submit", function(e) {
+            if ($form.find("button, input[type='submit']").is(":disabled")) {
+              e.preventDefault();
+            }
+          });
+        }
+      });
+    });
+  };
 })();
