@@ -1,53 +1,13 @@
-window.initializeFormValidation = function($form, appToken) {
-  console.log("initializeFormValidation called");
+window.initializeValidation = function($form, appToken) {
+  console.log("initializeValidation called");
   
   let emailValid = false;
   let messageValid = false;
 
-  // Function to send email to Bubble API for validation
-  function sendEmailToBubble(email) {
-    console.log("Sending email for validation: ", email);
+  // Function to validate email
+  function validateEmail(email) {
+    console.log("Validating email: ", email);
     const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email"; // Your Bubble API endpoint
-    const data = { email: email, app_token: appToken }; // Use the app token passed to the function
-
-    fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${appToken}` // Use app token in Authorization header
-      },
-      body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log("Response from email validation: ", data);
-      if (data.status === "blocked") {
-        emailValid = false;
-        updateSubmitButtonState();
-        $form.find(".feedback-message").text("Invalid email").css("color", "red");
-      } else {
-        emailValid = true;
-        $form.find(".feedback-message").text("Valid email").css("color", "green");
-        updateSubmitButtonState();
-      }
-    })
-    .catch(error => {
-      console.error("Error:", error);
-    });
-  }
-
-  // Function to send message to Bubble API for validation
-  function sendMessageToBubble(message, email) {
-    console.log("Sending message for validation: ", message);
-    const apiUrl = "https://gleemeo.com/api/1.1/wf/validate_message";
-    const data = { message: message, email: email, app_token: appToken };
-
-    if (!emailValid) {
-      messageValid = false;
-      $form.find(".feedback-message").text("Blocked email, skipping message validation").css("color", "red");
-      updateSubmitButtonState();
-      return;
-    }
 
     fetch(apiUrl, {
       method: "POST",
@@ -55,26 +15,44 @@ window.initializeFormValidation = function($form, appToken) {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${appToken}`
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ email: email, app_token: appToken })
     })
     .then(response => response.json())
     .then(data => {
-      console.log("Response from message validation: ", data);
-      if (data.status === "spam") {
-        messageValid = false;
-        $form.find(".feedback-message").text("Spam message detected").css("color", "red");
-      } else {
-        messageValid = true;
-        $form.find(".feedback-message").text("Legitimate message").css("color", "green");
-      }
+      emailValid = data.status !== "blocked";
       updateSubmitButtonState();
+      displayFeedback(emailValid, "email", data.status);
     })
-    .catch(error => {
-      console.error("Error:", error);
-    });
+    .catch(error => console.error("Error validating email:", error));
   }
 
-  // Function to update the submit button state
+  // Function to validate message
+  function validateMessage(message, email) {
+    if (!emailValid) {
+      displayFeedback(false, "message", "Blocked email, skipping message validation");
+      return;
+    }
+
+    const apiUrl = "https://gleemeo.com/api/1.1/wf/validate_message";
+
+    fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${appToken}`
+      },
+      body: JSON.stringify({ message: message, email: email, app_token: appToken })
+    })
+    .then(response => response.json())
+    .then(data => {
+      messageValid = data.status !== "spam";
+      updateSubmitButtonState();
+      displayFeedback(messageValid, "message", data.status);
+    })
+    .catch(error => console.error("Error validating message:", error));
+  }
+
+  // Function to update submit button state
   function updateSubmitButtonState() {
     const submitButton = $form.find("button, input[type='submit']");
     if (emailValid && messageValid) {
@@ -84,11 +62,21 @@ window.initializeFormValidation = function($form, appToken) {
     }
   }
 
-  // Attach event listeners for real-time validation
+  // Function to display feedback messages
+  function displayFeedback(isValid, type, status) {
+    const feedbackMessage = $form.find(".feedback-message");
+    if (isValid) {
+      feedbackMessage.text(`${type.charAt(0).toUpperCase() + type.slice(1)} is valid`).css("color", "green");
+    } else {
+      feedbackMessage.text(`Invalid ${type}: ${status}`).css("color", "red");
+    }
+  }
+
+  // Attach event listeners for validation
   $form.find("input[type='email']").on("blur", function () {
     const email = $(this).val();
     if (email) {
-      sendEmailToBubble(email);
+      validateEmail(email);
     }
   });
 
@@ -96,7 +84,7 @@ window.initializeFormValidation = function($form, appToken) {
     const message = $(this).val();
     const email = $form.find("input[type='email']").val();
     if (message) {
-      sendMessageToBubble(message, email);
+      validateMessage(message, email);
     }
   });
 
@@ -107,5 +95,6 @@ window.initializeFormValidation = function($form, appToken) {
     }
   });
 };
+
 
 
