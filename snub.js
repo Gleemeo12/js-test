@@ -3,6 +3,9 @@
     let emailValid = false;
     let messageValid = false;
 
+    // Debugging: Ensure app_token is passed correctly
+    console.log("Initializing with app_token:", options.app_token);
+
     function sendEmailToBubble(email, appToken) {
       const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email";
       const data = {
@@ -104,6 +107,7 @@
       const email = $(this).val();
       console.log("Email field blur detected:", email);  // Debugging blur event
       if (email) {
+        console.log("Triggering sendEmailToBubble with app_token:", options.app_token);  // Debugging
         sendEmailToBubble(email, options.app_token);
       }
     });
@@ -114,6 +118,7 @@
       const email = $form.find("input[type='email']").val();
       console.log("Message field blur detected:", message);  // Debugging blur event
       if (message) {
+        console.log("Triggering sendMessageToBubble with app_token:", options.app_token);  // Debugging
         sendMessageToBubble(message, email, options.app_token);
       }
     });
