@@ -1,10 +1,12 @@
-// Ensure the function is exposed globally
 window.initializeFormValidation = function($form, appToken) {
+  console.log("initializeFormValidation called");
+
   let emailValid = false;
   let messageValid = false;
 
   // Function to send email to Bubble API when email input field is changed
   function sendEmailToBubble(email) {
+    console.log("Sending email for validation: ", email);
     const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email"; // Your Bubble API endpoint
     const data = { email: email, app_token: appToken }; // Use the app token passed to the function
 
@@ -18,6 +20,7 @@ window.initializeFormValidation = function($form, appToken) {
     })
     .then(response => response.json())
     .then(data => {
+      console.log("Response from email validation: ", data);
       if (data.status === "blocked") {
         emailValid = false;
         updateSubmitButtonState();
@@ -35,6 +38,7 @@ window.initializeFormValidation = function($form, appToken) {
 
   // Function to send message to Bubble API for validation
   function sendMessageToBubble(message, email) {
+    console.log("Sending message for validation: ", message);
     const apiUrl = "https://gleemeo.com/api/1.1/wf/validate_message";
     const data = { message: message, email: email, app_token: appToken };
 
@@ -55,6 +59,7 @@ window.initializeFormValidation = function($form, appToken) {
     })
     .then(response => response.json())
     .then(data => {
+      console.log("Response from message validation: ", data);
       if (data.status === "spam") {
         messageValid = false;
         $form.find(".feedback-message").text("Spam message detected").css("color", "red");
@@ -102,3 +107,4 @@ window.initializeFormValidation = function($form, appToken) {
     }
   });
 };
+
