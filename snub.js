@@ -1,4 +1,5 @@
-function initializeFormValidation($form, appToken) {
+// Ensure the function is exposed globally
+window.initializeFormValidation = function($form, appToken) {
   let emailValid = false;
   let messageValid = false;
 
@@ -100,4 +101,4 @@ function initializeFormValidation($form, appToken) {
       e.preventDefault();
     }
   });
-}
+};
