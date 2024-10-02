@@ -10,7 +10,7 @@
         app_token: appToken
       };
 
-      console.log("Sending email validation request:", email);  // Added for debugging
+      console.log("Sending email validation request:", email);  // Debugging API call
 
       fetch(apiUrl, {
         method: "POST",
@@ -22,7 +22,7 @@
       })
       .then(response => response.json())
       .then(data => {
-        console.log("Email validation response:", data);  // Added for debugging
+        console.log("Email validation response:", data);  // Debugging API response
         if (data.status === "blocked") {
           emailValid = false;
           $form.find(".feedback-message").text("Invalid email").css("color", "red");
@@ -52,7 +52,7 @@
         return;
       }
 
-      console.log("Sending message validation request:", message);  // Added for debugging
+      console.log("Sending message validation request:", message);  // Debugging message validation
 
       fetch(apiUrl, {
         method: "POST",
@@ -64,7 +64,7 @@
       })
       .then(response => response.json())
       .then(data => {
-        console.log("Message validation response:", data);  // Added for debugging
+        console.log("Message validation response:", data);  // Debugging API response
         if (data.status === "spam") {
           messageValid = false;
           $form.find(".feedback-message").text("Spam message detected").css("color", "red");
@@ -82,13 +82,13 @@
     function updateSubmitButtonState($form) {
       const submitButton = $form.find("button, input[type='submit']");
       if (emailValid && messageValid) {
-        console.log("Form is valid, enabling submit button");  // Added for debugging
+        console.log("Form is valid, enabling submit button");  // Debugging button state
         submitButton.removeAttr("disabled").css({
           'opacity': '1',
           'pointer-events': 'auto'
         });
       } else {
-        console.log("Form is invalid, disabling submit button");  // Added for debugging
+        console.log("Form is invalid, disabling submit button");  // Debugging button state
         submitButton.attr("disabled", "disabled").css({
           'opacity': '0.5',
           'pointer-events': 'none'
@@ -102,7 +102,7 @@
     // Email field validation on blur
     $form.find("input[type='email']").on("blur", function () {
       const email = $(this).val();
-      console.log("Email field blur detected:", email);  // Added for debugging
+      console.log("Email field blur detected:", email);  // Debugging blur event
       if (email) {
         sendEmailToBubble(email, options.app_token);
       }
@@ -112,7 +112,7 @@
     $form.find("textarea[name='message']").on("blur", function () {
       const message = $(this).val();
       const email = $form.find("input[type='email']").val();
-      console.log("Message field blur detected:", message);  // Added for debugging
+      console.log("Message field blur detected:", message);  // Debugging blur event
       if (message) {
         sendMessageToBubble(message, email, options.app_token);
       }
@@ -121,7 +121,7 @@
     // Prevent form submission if invalid
     $form.on("submit", function (e) {
       if ($form.find("button, input[type='submit']").is(":disabled")) {
-        console.log("Form submission prevented due to validation errors");  // Added for debugging
+        console.log("Form submission prevented due to validation errors");  // Debugging form submission prevention
         e.preventDefault();
       }
     });
