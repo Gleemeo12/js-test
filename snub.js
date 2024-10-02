@@ -1,10 +1,10 @@
 window.initializeFormValidation = function($form, appToken) {
   console.log("initializeFormValidation called");
-
+  
   let emailValid = false;
   let messageValid = false;
 
-  // Function to send email to Bubble API when email input field is changed
+  // Function to send email to Bubble API for validation
   function sendEmailToBubble(email) {
     console.log("Sending email for validation: ", email);
     const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email"; // Your Bubble API endpoint
