@@ -7,7 +7,7 @@ window.initializeValidation = function($form, appToken) {
   // Function to validate email
   function validateEmail(email) {
     console.log("Validating email: ", email);
-    const apiUrl = "https://yourapi.com/api/1.1/wf/record_email"; // Your API endpoint
+    const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email"; // Your Bubble API endpoint
 
     fetch(apiUrl, {
       method: "POST",
@@ -33,7 +33,7 @@ window.initializeValidation = function($form, appToken) {
       return;
     }
 
-    const apiUrl = "https://yourapi.com/api/1.1/wf/validate_message";
+    const apiUrl = "https://gleemeo.com/api/1.1/wf/validate_message";
 
     fetch(apiUrl, {
       method: "POST",
