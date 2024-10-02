@@ -1,70 +1,87 @@
-// external-validation.js
-
-window.initializeValidation = function($form, appToken) {
-  console.log("initializeValidation called");
-
+// Main validation logic hosted on GitHub
+window.initializeFormValidation = function ($form, app_token) {
   let emailValid = false;
   let messageValid = false;
 
-  // Function to validate email
-  function validateEmail(email) {
-    console.log("Validating email: ", email);
+  function sendEmailToBubble(email) {
     const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email"; // Your Bubble API endpoint
+    const data = {
+      email: email,
+      app_token: app_token // Use the dynamic app token
+    };
 
-    return fetch(apiUrl, {
+    // Send API call for email validation
+    fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${appToken}`
+        "Authorization": `Bearer ${app_token}`
       },
-      body: JSON.stringify({ email: email, app_token: appToken })
+      body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {
-      emailValid = data.status !== "blocked";
-      updateSubmitButtonState();
-      displayFeedback(emailValid, "email", data.status);
+      if (data.status === "blocked") {
+        emailValid = false;
+        updateSubmitButtonState();
+        $form.find(".feedback-message").text("Invalid email").css("color", "red");
+      } else {
+        emailValid = true;
+        $form.find(".feedback-message").text("Valid email").css("color", "green");
+        updateSubmitButtonState();
+      }
     })
-    .catch(error => console.error("Error validating email:", error));
+    .catch(error => {
+      console.error("Error:", error);
+    });
   }
 
-  // Function to validate message
-  function validateMessage(message, email) {
+  function sendMessageToBubble(message, email) {
+    const apiUrl = "https://gleemeo.com/api/1.1/wf/validate_message"; // Your Bubble API endpoint for message validation
+    const data = {
+      message: message,
+      email: email,
+      app_token: app_token // Use the dynamic app token
+    };
+
     if (!emailValid) {
-      displayFeedback(false, "message", "Blocked email, skipping message validation");
-      return Promise.resolve(); // Resolve to indicate no further validation
+      messageValid = false;
+      updateSubmitButtonState();
+      return;
     }
 
-    const apiUrl = "https://gleemeo.com/api/1.1/wf/validate_message"; // Your Bubble API endpoint
-
-    return fetch(apiUrl, {
+    fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${appToken}`
+        "Authorization": `Bearer ${app_token}`
       },
-      body: JSON.stringify({ message: message, email: email, app_token: appToken })
+      body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {
-      messageValid = data.status !== "spam";
+      if (data.status === "spam") {
+        messageValid = false;
+        $form.find(".feedback-message").text("Spam message detected").css("color", "red");
+      } else {
+        messageValid = true;
+        $form.find(".feedback-message").text("Legitimate message").css("color", "green");
+      }
       updateSubmitButtonState();
-      displayFeedback(messageValid, "message", data.status);
     })
-    .catch(error => console.error("Error validating message:", error));
+    .catch(error => {
+      console.error("Error:", error);
+    });
   }
 
-  // Function to update the state of the submit button based on validation results
   function updateSubmitButtonState() {
     const submitButton = $form.find("button, input[type='submit']");
     if (emailValid && messageValid) {
-      console.log("Both email and message are valid, enabling submit button.");
       submitButton.removeAttr("disabled").css({
         'opacity': '1',
         'pointer-events': 'auto'
       });
     } else {
-      console.log("Disabling submit button due to invalid email or message.");
       submitButton.attr("disabled", "disabled").css({
         'opacity': '0.5',
         'pointer-events': 'none'
@@ -72,11 +89,12 @@ window.initializeValidation = function($form, appToken) {
     }
   }
 
-  // Attach event listeners for validation
+  $form.append('<div class="feedback-message"></div>');
+
   $form.find("input[type='email']").on("blur", function () {
     const email = $(this).val();
     if (email) {
-      validateEmail(email);
+      sendEmailToBubble(email);
     }
   });
 
@@ -84,25 +102,14 @@ window.initializeValidation = function($form, appToken) {
     const message = $(this).val();
     const email = $form.find("input[type='email']").val();
     if (message) {
-      validateMessage(message, email);
+      sendMessageToBubble(message, email);
     }
   });
 
-  // Prevent form submission if validation fails
   $form.on("submit", function (e) {
-    const email = $form.find("input[type='email']").val();
-    const message = $form.find("textarea[name='message']").val();
-
-    // Validate both fields before submission
-    Promise.all([
-      validateEmail(email),
-      validateMessage(message, email)
-    ]).then(() => {
-      if (!emailValid || !messageValid) {
-        e.preventDefault();
-        displayFeedback(false, "form", "Please correct the errors before submitting.");
-      }
-    });
+    if ($form.find("button, input[type='submit']").is(":disabled")) {
+      e.preventDefault();
+    }
   });
 };
 
