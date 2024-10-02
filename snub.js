@@ -21,15 +21,15 @@ window.initializeFormValidation = function ($form, app_token) {
     })
     .then(response => response.json())
     .then(data => {
+      console.log("Email validation response:", data); // Debugging
       if (data.status === "blocked") {
         emailValid = false;
-        updateSubmitButtonState();
         $form.find(".feedback-message").text("Invalid email").css("color", "red");
       } else {
         emailValid = true;
         $form.find(".feedback-message").text("Valid email").css("color", "green");
-        updateSubmitButtonState();
       }
+      updateSubmitButtonState();
     })
     .catch(error => {
       console.error("Error:", error);
@@ -60,6 +60,7 @@ window.initializeFormValidation = function ($form, app_token) {
     })
     .then(response => response.json())
     .then(data => {
+      console.log("Message validation response:", data); // Debugging
       if (data.status === "spam") {
         messageValid = false;
         $form.find(".feedback-message").text("Spam message detected").css("color", "red");
@@ -85,33 +86,7 @@ window.initializeFormValidation = function ($form, app_token) {
       submitButton.attr("disabled", "disabled").css({
         'opacity': '0.5',
         'pointer-events': 'none'
-      });
-    }
-  }
-
-  $form.append('<div class="feedback-message"></div>');
-
-  $form.find("input[type='email']").on("blur", function () {
-    const email = $(this).val();
-    if (email) {
-      sendEmailToBubble(email);
-    }
-  });
-
-  $form.find("textarea[name='message']").on("blur", function () {
-    const message = $(this).val();
-    const email = $form.find("input[type='email']").val();
-    if (message) {
-      sendMessageToBubble(message, email);
-    }
-  });
-
-  $form.on("submit", function (e) {
-    if ($form.find("button, input[type='submit']").is(":disabled")) {
-      e.preventDefault();
-    }
-  });
-};
+ 
 
 
 
