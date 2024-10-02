@@ -1,6 +1,6 @@
 window.initializeValidation = function($form, appToken) {
   console.log("initializeValidation called");
-
+  
   let emailValid = false;
   let messageValid = false;
 
