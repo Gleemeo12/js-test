@@ -1,90 +1,103 @@
-(function() {
-  window.validateForm = window.validateForm || [];
+function initializeFormValidation($form, appToken) {
+  let emailValid = false;
+  let messageValid = false;
 
-  // Listen for the form initialization event
-  window.validateForm.push = function(args) {
-    var opts = args[1];
-    var appToken = opts.app_token;
-    var hubspotRegion = opts.region;
-    var hubspotPortalId = opts.portalId;
-    var hubspotFormId = opts.formId;
+  // Function to send email to Bubble API when email input field is changed
+  function sendEmailToBubble(email) {
+    const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email"; // Your Bubble API endpoint
+    const data = { email: email, app_token: appToken }; // Use the app token passed to the function
 
-    // Wait for the document to be ready
-    document.addEventListener('DOMContentLoaded', function() {
-      hbspt.forms.create({
-        region: hubspotRegion,
-        portalId: hubspotPortalId,
-        formId: hubspotFormId,
-        onFormReady: function($form) {
-          let emailValid = false;
-          let messageValid = false;
-
-          // Email validation function
-          function validateEmail(email) {
-            fetch("https://gleemeo.com/api/1.1/wf/record_email", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${appToken}`
-              },
-              body: JSON.stringify({ email: email })
-            })
-            .then(response => response.json())
-            .then(data => {
-              emailValid = data.status !== "blocked";
-              updateFormState($form);
-            })
-            .catch(error => console.error("Email validation error:", error));
-          }
-
-          // Message validation function
-          function validateMessage(message, email) {
-            fetch("https://gleemeo.com/api/1.1/wf/validate_message", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${appToken}`
-              },
-              body: JSON.stringify({ message: message, email: email })
-            })
-            .then(response => response.json())
-            .then(data => {
-              messageValid = data.status !== "spam";
-              updateFormState($form);
-            })
-            .catch(error => console.error("Message validation error:", error));
-          }
-
-          // Disable form submission if validation fails
-          function updateFormState($form) {
-            const submitButton = $form.find("button, input[type='submit']");
-            if (emailValid && messageValid) {
-              submitButton.removeAttr("disabled").css({ 'opacity': '1', 'pointer-events': 'auto' });
-            } else {
-              submitButton.attr("disabled", "disabled").css({ 'opacity': '0.5', 'pointer-events': 'none' });
-            }
-          }
-
-          // Event listeners for form inputs
-          $form.find("input[type='email']").on("blur", function() {
-            const email = $(this).val();
-            if (email) validateEmail(email);
-          });
-
-          $form.find("textarea[name='message']").on("blur", function() {
-            const message = $(this).val();
-            const email = $form.find("input[type='email']").val();
-            if (message) validateMessage(message, email);
-          });
-
-          // Prevent form submission if validation fails
-          $form.on("submit", function(e) {
-            if ($form.find("button, input[type='submit']").is(":disabled")) {
-              e.preventDefault();
-            }
-          });
-        }
-      });
+    fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${appToken}` // Use app token in Authorization header
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "blocked") {
+        emailValid = false;
+        updateSubmitButtonState();
+        $form.find(".feedback-message").text("Invalid email").css("color", "red");
+      } else {
+        emailValid = true;
+        $form.find(".feedback-message").text("Valid email").css("color", "green");
+        updateSubmitButtonState();
+      }
+    })
+    .catch(error => {
+      console.error("Error:", error);
     });
-  };
-})();
+  }
+
+  // Function to send message to Bubble API for validation
+  function sendMessageToBubble(message, email) {
+    const apiUrl = "https://gleemeo.com/api/1.1/wf/validate_message";
+    const data = { message: message, email: email, app_token: appToken };
+
+    if (!emailValid) {
+      messageValid = false;
+      $form.find(".feedback-message").text("Blocked email, skipping message validation").css("color", "red");
+      updateSubmitButtonState();
+      return;
+    }
+
+    fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${appToken}`
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "spam") {
+        messageValid = false;
+        $form.find(".feedback-message").text("Spam message detected").css("color", "red");
+      } else {
+        messageValid = true;
+        $form.find(".feedback-message").text("Legitimate message").css("color", "green");
+      }
+      updateSubmitButtonState();
+    })
+    .catch(error => {
+      console.error("Error:", error);
+    });
+  }
+
+  // Function to update the submit button state
+  function updateSubmitButtonState() {
+    const submitButton = $form.find("button, input[type='submit']");
+    if (emailValid && messageValid) {
+      submitButton.removeAttr("disabled").css({ 'opacity': '1', 'pointer-events': 'auto' });
+    } else {
+      submitButton.attr("disabled", "disabled").css({ 'opacity': '0.5', 'pointer-events': 'none' });
+    }
+  }
+
+  // Attach event listeners for real-time validation
+  $form.find("input[type='email']").on("blur", function () {
+    const email = $(this).val();
+    if (email) {
+      sendEmailToBubble(email);
+    }
+  });
+
+  $form.find("textarea[name='message']").on("blur", function () {
+    const message = $(this).val();
+    const email = $form.find("input[type='email']").val();
+    if (message) {
+      sendMessageToBubble(message, email);
+    }
+  });
+
+  // Prevent form submission if validation fails
+  $form.on("submit", function (e) {
+    if (!emailValid || !messageValid) {
+      e.preventDefault();
+    }
+  });
+}
