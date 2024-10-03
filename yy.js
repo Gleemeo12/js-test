@@ -7,13 +7,13 @@
     console.log("Form element found:", $form.length > 0); // Debugging form selection
 
     function sendEmailToBubble(email, appToken) {
-      const apiUrl = options.api_url_email; // Use the API URL from options
+      const apiUrl = options.api_url_email;
       const data = {
         email: email,
         app_token: appToken
       };
 
-      console.log("Sending email validation request:", email); // Debugging API call
+      console.log("Sending email validation request:", email);
 
       fetch(apiUrl, {
         method: "POST",
@@ -41,7 +41,7 @@
     }
 
     function sendMessageToBubble(message, email, appToken) {
-      const apiUrl = options.api_url_message; // Use the API URL from options
+      const apiUrl = options.api_url_message;
       const data = {
         message: message,
         email: email,
@@ -55,7 +55,7 @@
         return;
       }
 
-      console.log("Sending message validation request:", message); // Debugging message validation
+      console.log("Sending message validation request:", message);
 
       fetch(apiUrl, {
         method: "POST",
@@ -67,7 +67,7 @@
       })
       .then(response => response.json())
       .then(data => {
-        console.log("Message validation response:", data); // Debugging API response
+        console.log("Message validation response:", data);
         if (data.status === "spam") {
           messageValid = false;
           $form.find(".feedback-message").text("Spam message detected").css("color", "red");
@@ -85,13 +85,13 @@
     function updateSubmitButtonState($form) {
       const submitButton = $form.find("button, input[type='submit']");
       if (emailValid && messageValid) {
-        console.log("Form is valid, enabling submit button"); // Debugging button state
+        console.log("Form is valid, enabling submit button");
         submitButton.removeAttr("disabled").css({
           'opacity': '1',
           'pointer-events': 'auto'
         });
       } else {
-        console.log("Form is invalid, disabling submit button"); // Debugging button state
+        console.log("Form is invalid, disabling submit button");
         submitButton.attr("disabled", "disabled").css({
           'opacity': '0.5',
           'pointer-events': 'none'
@@ -105,7 +105,7 @@
     console.log("Looking for input[type='email']");
     $form.find("input[type='email']").on("blur", function () {
       const email = $(this).val();
-      console.log("Email blur event detected:", email); // Debugging blur event
+      console.log("Email blur event detected:", email);
       if (email) {
         sendEmailToBubble(email, options.app_token);
       }
@@ -115,7 +115,7 @@
     $form.find("textarea[name='message']").on("blur", function () {
       const message = $(this).val();
       const email = $form.find("input[type='email']").val();
-      console.log("Message blur event detected:", message); // Debugging blur event
+      console.log("Message blur event detected:", message);
       if (message) {
         sendMessageToBubble(message, email, options.app_token);
       }
@@ -124,7 +124,7 @@
     // Prevent form submission if invalid
     $form.on("submit", function (e) {
       if ($form.find("button, input[type='submit']").is(":disabled")) {
-        console.log("Form submission prevented due to validation errors"); // Debugging form submission prevention
+        console.log("Form submission prevented due to validation errors");
         e.preventDefault();
       }
     });
@@ -133,7 +133,7 @@
   // Initialize gleemeo on form ready
   window.gleemeo = window.gleemeo || [];
   window.gleemeo.push(["initialize", function (opts, $form) {
-    console.log("Gleemeo initialization triggered with options:", opts); // Debugging initialization
+    console.log("Gleemeo initialization triggered with options:", opts);
     initializeGleemeo(opts, $form);
   }]);
 })();
