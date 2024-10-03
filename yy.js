@@ -5,6 +5,7 @@
 
     // Debugging: Ensure app_token is passed correctly
     console.log("Initializing with app_token:", options.app_token);
+    console.log("Form element found:", $form.length > 0);  // Debugging form selection
 
     function sendEmailToBubble(email, appToken) {
       const apiUrl = "https://gleemeo.com/api/1.1/wf/record_email";
@@ -102,23 +103,22 @@
     // Append feedback message container
     $form.append('<div class="feedback-message"></div>');
 
-    // Email field validation on blur
+    // Debugging: Log when form elements are found
+    console.log("Looking for input[type='email']");
     $form.find("input[type='email']").on("blur", function () {
       const email = $(this).val();
-      console.log("Email field blur detected:", email);  // Debugging blur event
+      console.log("Email blur event detected:", email);  // Debugging blur event
       if (email) {
-        console.log("Triggering sendEmailToBubble with app_token:", options.app_token);  // Debugging
         sendEmailToBubble(email, options.app_token);
       }
     });
 
-    // Message field validation on blur
+    console.log("Looking for textarea[name='message']");
     $form.find("textarea[name='message']").on("blur", function () {
       const message = $(this).val();
       const email = $form.find("input[type='email']").val();
-      console.log("Message field blur detected:", message);  // Debugging blur event
+      console.log("Message blur event detected:", message);  // Debugging blur event
       if (message) {
-        console.log("Triggering sendMessageToBubble with app_token:", options.app_token);  // Debugging
         sendMessageToBubble(message, email, options.app_token);
       }
     });
@@ -135,6 +135,8 @@
   // Initialize gleemeo on form ready
   window.gleemeo = window.gleemeo || [];
   window.gleemeo.push(["initialize", function (opts, $form) {
+    console.log("Gleemeo initialization triggered with options:", opts);  // Debugging initialization
     initializeGleemeo(opts, $form);
   }]);
 })();
+
