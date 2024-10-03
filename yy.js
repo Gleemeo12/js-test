@@ -23,7 +23,10 @@
         },
         body: JSON.stringify(data)
       })
-      .then(response => response.json())
+      .then(response => {
+        console.log("Email validation response status:", response.status); // Log response status
+        return response.json();
+      })
       .then(data => {
         console.log("Email validation response:", data); // Debugging API response
         if (data.status === "blocked") {
@@ -65,7 +68,10 @@
         },
         body: JSON.stringify(data)
       })
-      .then(response => response.json())
+      .then(response => {
+        console.log("Message validation response status:", response.status); // Log response status
+        return response.json();
+      })
       .then(data => {
         console.log("Message validation response:", data);
         if (data.status === "spam") {
@@ -137,4 +143,5 @@
     initializeGleemeo(opts, $form);
   }]);
 })();
+
 
